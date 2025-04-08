@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,13 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Medusa custom colors
+				medusa: {
+					primary: "#8b5cf6",
+					secondary: "#7E69AB",
+					accent: "#D6BCFA",
+					"light-bg": "#F1F0FB"
 				}
 			},
 			borderRadius: {

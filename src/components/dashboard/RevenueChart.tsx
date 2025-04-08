@@ -69,16 +69,13 @@ const RevenueChart = () => {
               tick={{ fontSize: 12 }} 
               axisLine={false}
               tickLine={false}
-              tick={{ fill: '#888' }}
               tickMargin={8}
-              height={30}
             />
             <YAxis 
               tickFormatter={(value) => `$${value}`} 
               tick={{ fontSize: 12 }} 
               axisLine={false}
               tickLine={false}
-              tick={{ fill: '#888' }}
               tickMargin={8}
               width={isMobile ? 40 : 60}
             />

@@ -62,15 +62,12 @@ const OrdersChart = () => {
               tick={{ fontSize: 12 }} 
               axisLine={false}
               tickLine={false}
-              tick={{ fill: '#888' }}
               tickMargin={8}
-              height={30}
             />
             <YAxis 
               tick={{ fontSize: 12 }} 
               axisLine={false}
               tickLine={false}
-              tick={{ fill: '#888' }}
               tickMargin={8}
               width={isMobile ? 30 : 40}
             />

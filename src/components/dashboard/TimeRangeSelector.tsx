@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { CalendarRange, ChevronDown } from 'lucide-react';
+import React, { useState } from 'react';
+import { CalendarRange, ChevronDown, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import {
   Select,
@@ -17,6 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
 
 export type TimeRange = 
   | 'today'
@@ -36,27 +37,68 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
   customRange,
   onChange,
 }) => {
-  const [date, setDate] = React.useState<{
+  const [date, setDate] = useState<{
     from: Date | undefined;
     to: Date | undefined;
   }>({
     from: customRange?.from || undefined,
     to: customRange?.to || undefined,
   });
+  
+  const [fromTime, setFromTime] = useState(
+    customRange?.from ? format(customRange.from, 'HH:mm') : '00:00'
+  );
+  
+  const [toTime, setToTime] = useState(
+    customRange?.to ? format(customRange.to, 'HH:mm') : '23:59'
+  );
 
   const handleSelectChange = (newValue: TimeRange) => {
     if (newValue !== 'custom') {
       onChange(newValue);
     } else {
       // When selecting custom, open the date picker but don't change yet
-      onChange('custom', date.from && date.to ? { from: date.from, to: date.to } : undefined);
+      onChange('custom', date.from && date.to ? { 
+        from: combineDateTime(date.from, fromTime), 
+        to: combineDateTime(date.to, toTime)
+      } : undefined);
     }
+  };
+
+  const combineDateTime = (date: Date, timeString: string): Date => {
+    const [hours, minutes] = timeString.split(':').map(Number);
+    const newDate = new Date(date);
+    newDate.setHours(hours, minutes, 0, 0);
+    return newDate;
   };
 
   const handleDateSelect = (range: { from: Date | undefined; to: Date | undefined }) => {
     setDate(range);
     if (range.from && range.to) {
-      onChange('custom', { from: range.from, to: range.to });
+      onChange('custom', { 
+        from: combineDateTime(range.from, fromTime), 
+        to: combineDateTime(range.to, toTime) 
+      });
+    }
+  };
+
+  const handleFromTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFromTime(e.target.value);
+    if (date.from && date.to) {
+      onChange('custom', {
+        from: combineDateTime(date.from, e.target.value),
+        to: combineDateTime(date.to, toTime)
+      });
+    }
+  };
+
+  const handleToTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setToTime(e.target.value);
+    if (date.from && date.to) {
+      onChange('custom', {
+        from: combineDateTime(date.from, fromTime),
+        to: combineDateTime(date.to, e.target.value)
+      });
     }
   };
 
@@ -65,7 +107,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
     if (value !== 'custom' || !date.from || !date.to) {
       return "Select dates";
     }
-    return `${format(date.from, 'MMM d, yyyy')} - ${format(date.to, 'MMM d, yyyy')}`;
+    return `${format(date.from, 'MMM d, yyyy')} ${fromTime} - ${format(date.to, 'MMM d, yyyy')} ${toTime}`;
   };
 
   return (
@@ -99,13 +141,43 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="range"
-              selected={date}
-              onSelect={handleDateSelect}
-              numberOfMonths={2}
-              className="p-3 pointer-events-auto"
-            />
+            <div className="p-3 pointer-events-auto">
+              <Calendar
+                mode="range"
+                selected={date}
+                onSelect={handleDateSelect}
+                numberOfMonths={2}
+                className="mb-4"
+              />
+              
+              <div className="flex flex-col sm:flex-row gap-4 mt-4 border-t pt-4">
+                <div className="flex-1 space-y-2">
+                  <div className="flex items-center">
+                    <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <span className="text-sm font-medium">Start Time</span>
+                  </div>
+                  <Input
+                    type="time"
+                    value={fromTime}
+                    onChange={handleFromTimeChange}
+                    className="w-full"
+                  />
+                </div>
+                
+                <div className="flex-1 space-y-2">
+                  <div className="flex items-center">
+                    <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <span className="text-sm font-medium">End Time</span>
+                  </div>
+                  <Input
+                    type="time"
+                    value={toTime}
+                    onChange={handleToTimeChange}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+            </div>
           </PopoverContent>
         </Popover>
       )}

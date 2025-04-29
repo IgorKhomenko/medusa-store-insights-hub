@@ -1,23 +1,84 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import DashboardCard from './DashboardCard';
+import { TimeRange } from './TimeRangeSelector';
+import { subDays, subYears, startOfDay } from 'date-fns';
 
-// Sample data - in a real app, this would come from an API
-const data = [
-  { name: 'Available', value: 15000 },
-  { name: 'Pending', value: 3500 },
-  { name: 'Reserved', value: 2000 },
+// Full balance data by date (simulated)
+const balanceHistory = [
+  // Last year
+  { date: new Date('2024-04-29'), available: 10000, pending: 2500, reserved: 1500 },
+  { date: new Date('2024-07-15'), available: 12000, pending: 3000, reserved: 1800 },
+  { date: new Date('2024-10-01'), available: 14000, pending: 3200, reserved: 1900 },
+  { date: new Date('2025-01-15'), available: 15000, pending: 3500, reserved: 2000 },
+  // Recent days (last 30 days)
+  ...Array.from({ length: 30 }).map((_, i) => {
+    const date = subDays(new Date(), i);
+    const baseAvailable = 15000 + Math.floor(Math.random() * 1000);
+    const basePending = 3500 + Math.floor(Math.random() * 500);
+    const baseReserved = 2000 + Math.floor(Math.random() * 300);
+    
+    return {
+      date,
+      available: baseAvailable,
+      pending: basePending,
+      reserved: baseReserved,
+    };
+  })
 ];
 
-const COLORS = ['#8b5cf6', '#f59e0b', '#94a3b8'];
+interface AccountBalanceProps {
+  timeRange: TimeRange;
+  customRange?: { from: Date; to: Date };
+}
 
-const AccountBalance = () => {
+const AccountBalance = ({ timeRange, customRange }: AccountBalanceProps) => {
+  const filteredData = useMemo(() => {
+    const today = startOfDay(new Date());
+    
+    switch (timeRange) {
+      case 'today':
+        return balanceHistory.filter(item => 
+          item.date.getDate() === today.getDate() &&
+          item.date.getMonth() === today.getMonth() &&
+          item.date.getFullYear() === today.getFullYear()
+        )[0] || balanceHistory[0];
+      case 'last7days':
+        const last7Days = subDays(today, 7);
+        return balanceHistory.filter(item => item.date >= last7Days).pop() || balanceHistory[0];
+      case 'last30days':
+        const last30Days = subDays(today, 30);
+        return balanceHistory.filter(item => item.date >= last30Days).pop() || balanceHistory[0];
+      case 'lastyear':
+        const lastYear = subYears(today, 1);
+        return balanceHistory.filter(item => item.date >= lastYear).pop() || balanceHistory[0];
+      case 'custom':
+        if (customRange?.from && customRange?.to) {
+          const filteredByDate = balanceHistory.filter(
+            item => item.date >= customRange.from && item.date <= customRange.to
+          );
+          return filteredByDate.pop() || balanceHistory[0];
+        }
+        return balanceHistory[0];
+      default:
+        return balanceHistory[0];
+    }
+  }, [timeRange, customRange]);
+  
+  const data = useMemo(() => [
+    { name: 'Available', value: filteredData?.available || 15000 },
+    { name: 'Pending', value: filteredData?.pending || 3500 },
+    { name: 'Reserved', value: filteredData?.reserved || 2000 },
+  ], [filteredData]);
+  
+  const COLORS = ['#8b5cf6', '#f59e0b', '#94a3b8'];
+  
   // Calculate total balance
   const totalBalance = data.reduce((sum, entry) => sum + entry.value, 0);
   
   return (
-    <DashboardCard title="Account Balance" subtitle="Current financial status">
+    <DashboardCard title="Account Balance" subtitle="Financial status for selected period">
       <div className="flex flex-col-reverse md:flex-row">
         <div className="flex-1">
           <div className="mb-4 space-y-4">
